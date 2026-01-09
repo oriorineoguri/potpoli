@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>백테스트 간단 테스트</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        pre {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>백테스트 간단 테스트</h1>
+
+    <p>삼성전자(005930), SK하이닉스(000660) - 2023-01-01 기준</p>
+
+    <button onclick="runTest()">백테스트 실행</button>
+
+    <div id="result" class="result" style="display: none;">
+        <h3>결과:</h3>
+        <pre id="result-text"></pre>
+    </div>
+
+    <script>
+        async function runTest() {
+            const resultDiv = document.getElementById('result');
+            const resultText = document.getElementById('result-text');
+
+            resultDiv.style.display = 'block';
+            resultText.textContent = '백테스트 실행 중...';
+
+            try {
+                const response = await fetch('http://localhost:5000/api/backtest', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        tickers: ['005930', '000660'],
+                        start_date: '2023-01-01',
+                        stock_configs: {}
+                    })
+                });
+
+                console.log('Response status:', response.status);
+
+                const result = await response.json();
+
+                console.log('Result:', result);
+
+                if (result.success) {
+                    const { results, summary } = result.data;
+
+                    let output = `성공!\n\n`;
+                    output += `총 종목: ${summary.total_stocks}개\n`;
+                    output += `저평가 추천: ${summary.recommended_stocks}개\n`;
+                    output += `성공률: ${summary.success_rate}%\n`;
+                    output += `현재까지 평균 수익률: ${summary.avg_current_return}%\n\n`;
+
+                    output += `종목별 결과:\n`;
+                    results.forEach(stock => {
+                        output += `\n${stock.company_name}\n`;
+                        output += `  시작가: ${stock.initial_price.toLocaleString()}원\n`;
+                        output += `  적정가: ${stock.fair_value.toLocaleString()}원\n`;
+                        output += `  판단: ${stock.judgment}\n`;
+                        output += `  현재 수익률: ${stock.current_return ? stock.current_return.toFixed(2) : 'N/A'}%\n`;
+                    });
+
+                    resultText.textContent = output;
+                } else {
+                    resultText.textContent = `실패: ${result.error}`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                resultText.textContent = `오류: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

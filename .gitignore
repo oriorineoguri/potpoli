@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+*.egg-info/
+dist/
+build/
+
+# 테스트
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+.hypothesis/
+.tox/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# 환경변수
+.env
+.env.local
+.env.*.local
+
+# 데이터 캐시
+data/cache/
+data/test_cache/
+*.json
+!package.json
+!package-lock.json
+
+# 출력 파일
+output/
+*.html
+!templates/*.html
+
+# 로그
+*.log
+logs/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Docker
+.dockerignore
+
+# 기타
+*.bak
+*.tmp

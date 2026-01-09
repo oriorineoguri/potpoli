@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  stock-api:
+    # GHCR에서 이미지 사용
+    image: ghcr.io/${GITHUB_USERNAME}/${GITHUB_REPO}:latest
+    container_name: stock-portfolio-api
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - HOST=0.0.0.0
+      - DEBUG=True
+      - DART_API_KEY=${DART_API_KEY}
+    volumes:
+      # 데이터 캐시 영구 저장 (선택사항)
+      - ./data:/app/data
+      # 환경변수 파일 마운트
+      - ./.env:/app/.env:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000/api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>레츠고 주식왕 - 포트폴리오 대시보드</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .summary-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .summary-card h3 {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .summary-card .value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .charts {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .chart-container h2 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 1.3rem;
+        }
+
+        .stocks-table {
+            padding: 30px;
+        }
+
+        .stocks-table h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+        }
+
+        th {
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+
+        tbody tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        tbody tr:hover {
+            background: #e9ecef;
+            transition: all 0.2s;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .badge-undervalued {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-fair {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-overvalued {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .positive {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .negative {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .score-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .score-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #dc3545 0%, #ffc107 50%, #28a745 100%);
+            transition: width 0.3s ease;
+        }
+
+        .recommendations {
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .recommendations h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .recommendation-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .recommendation-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-left: 5px solid #28a745;
+        }
+
+        .recommendation-card h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .recommendation-card .ticker {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .recommendation-card .metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .metric {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .metric-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+
+        .metric-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        footer {
+            background: #343a40;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        footer p {
+            margin: 5px 0;
+            font-size: 0.9rem;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 30px;
+            border-radius: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .charts {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 1.8rem;
+            }
+
+            table {
+                font-size: 0.85rem;
+            }
+
+            th, td {
+                padding: 10px 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📈 레츠고 주식왕</h1>
+            <p>AI 기반 포트폴리오 분석 대시보드</p>
+        </header>
+
+        <div class="warning">
+            <strong>⚠️ 투자 유의사항:</strong> 본 분석은 참고용이며, 실제 투자 판단은 투자자 본인의 책임입니다.
+        </div>
+
+        <!-- 요약 통계 -->
+        <div class="summary" id="summary">
+            <div class="summary-card">
+                <h3>분석 종목 수</h3>
+                <div class="value" id="total-stocks">-</div>
+            </div>
+            <div class="summary-card">
+                <h3>저평가 종목</h3>
+                <div class="value" style="color: #28a745;" id="undervalued">-</div>
+            </div>
+            <div class="summary-card">
+                <h3>적정가 종목</h3>
+                <div class="value" style="color: #ffc107;" id="fair-priced">-</div>
+            </div>
+            <div class="summary-card">
+                <h3>고평가 종목</h3>
+                <div class="value" style="color: #dc3545;" id="overvalued">-</div>
+            </div>
+            <div class="summary-card">
+                <h3>평균 상승여력</h3>
+                <div class="value" id="avg-upside">-</div>
+            </div>
+        </div>
+
+        <!-- 차트 -->
+        <div class="charts">
+            <div class="chart-container">
+                <h2>평가 분포</h2>
+                <canvas id="judgmentChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h2>종목별 상승여력</h2>
+                <canvas id="upsideChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 추천 종목 -->
+        <div class="recommendations">
+            <h2>🏆 추천 포트폴리오 (저평가 종목)</h2>
+            <div class="recommendation-cards" id="recommendations">
+                <!-- JavaScript로 채워짐 -->
+            </div>
+        </div>
+
+        <!-- 전체 종목 테이블 -->
+        <div class="stocks-table">
+            <h2>📊 전체 종목 분석</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>순위</th>
+                        <th>종목명</th>
+                        <th>현재가</th>
+                        <th>적정가</th>
+                        <th>상승여력</th>
+                        <th>평가</th>
+                        <th>점수</th>
+                        <th>해자</th>
+                    </tr>
+                </thead>
+                <tbody id="stocks-tbody">
+                    <!-- JavaScript로 채워짐 -->
+                </tbody>
+            </table>
+        </div>
+
+        <footer>
+            <p><strong>레츠고 주식왕</strong> - S-RIM 기반 밸류에이션 시스템</p>
+            <p>데이터 출처: Yahoo Finance | 생성 시각: <span id="generated-at">-</span></p>
+            <p style="margin-top: 10px; font-size: 0.8rem; opacity: 0.8;">
+                본 소프트웨어는 교육 및 연구 목적으로 제작되었습니다. 투자 손실에 대한 책임은 투자자 본인에게 있습니다.
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // 포트폴리오 데이터 로드
+        async function loadPortfolioData() {
+            try {
+                const response = await fetch('portfolio_data.json');
+                const data = await response.json();
+                renderDashboard(data);
+            } catch (error) {
+                console.error('데이터 로드 실패:', error);
+                alert('포트폴리오 데이터를 불러올 수 없습니다.');
+            }
+        }
+
+        function renderDashboard(data) {
+            const { stocks, recommendations, summary, generated_at } = data;
+
+            // 요약 통계
+            document.getElementById('total-stocks').textContent = summary.total_stocks;
+            document.getElementById('undervalued').textContent = summary.undervalued;
+            document.getElementById('fair-priced').textContent = summary.fair_priced;
+            document.getElementById('overvalued').textContent = summary.overvalued;
+
+            const avgUpside = summary.avg_upside;
+            const avgUpsideEl = document.getElementById('avg-upside');
+            avgUpsideEl.textContent = `${avgUpside >= 0 ? '+' : ''}${avgUpside.toFixed(1)}%`;
+            avgUpsideEl.style.color = avgUpside >= 0 ? '#28a745' : '#dc3545';
+
+            // 생성 시각
+            const date = new Date(generated_at);
+            document.getElementById('generated-at').textContent = date.toLocaleString('ko-KR');
+
+            // 차트 렌더링
+            renderJudgmentChart(summary);
+            renderUpsideChart(stocks);
+
+            // 추천 종목 카드
+            renderRecommendations(recommendations);
+
+            // 전체 종목 테이블
+            renderStocksTable(stocks);
+        }
+
+        function renderJudgmentChart(summary) {
+            const ctx = document.getElementById('judgmentChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['저평가', '적정가', '고평가'],
+                    datasets: [{
+                        data: [summary.undervalued, summary.fair_priced, summary.overvalued],
+                        backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderUpsideChart(stocks) {
+            const ctx = document.getElementById('upsideChart').getContext('2d');
+            const sorted = [...stocks].sort((a, b) => b.upside_percent - a.upside_percent);
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sorted.map(s => s.company_name),
+                    datasets: [{
+                        label: '상승여력 (%)',
+                        data: sorted.map(s => s.upside_percent),
+                        backgroundColor: sorted.map(s =>
+                            s.upside_percent > 0 ? 'rgba(40, 167, 69, 0.7)' : 'rgba(220, 53, 69, 0.7)'
+                        ),
+                        borderColor: sorted.map(s =>
+                            s.upside_percent > 0 ? 'rgb(40, 167, 69)' : 'rgb(220, 53, 69)'
+                        ),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderRecommendations(recommendations) {
+            const container = document.getElementById('recommendations');
+
+            if (recommendations.length === 0) {
+                container.innerHTML = '<p style="text-align: center; padding: 40px; color: #6c757d;">추천 종목이 없습니다.</p>';
+                return;
+            }
+
+            container.innerHTML = recommendations.map(stock => `
+                <div class="recommendation-card">
+                    <h3>${stock.company_name}</h3>
+                    <div class="ticker">${stock.ticker}</div>
+                    <div class="metrics">
+                        <div class="metric">
+                            <div class="metric-label">현재가</div>
+                            <div class="metric-value">${stock.current_price.toLocaleString()}원</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">적정가</div>
+                            <div class="metric-value">${Math.round(stock.fair_price_per_share).toLocaleString()}원</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">상승여력</div>
+                            <div class="metric-value positive">+${stock.upside_percent.toFixed(1)}%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">종합점수</div>
+                            <div class="metric-value">${Math.round(stock.score)}/100</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <div class="score-bar">
+                            <div class="score-fill" style="width: ${stock.score}%"></div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderStocksTable(stocks) {
+            const tbody = document.getElementById('stocks-tbody');
+
+            tbody.innerHTML = stocks.map((stock, index) => {
+                const badgeClass = stock.judgment === '저평가' ? 'badge-undervalued' :
+                                  stock.judgment === '적정가' ? 'badge-fair' : 'badge-overvalued';
+
+                const upsideClass = stock.upside_percent >= 0 ? 'positive' : 'negative';
+
+                return `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td><strong>${stock.company_name}</strong><br><small style="color: #6c757d;">${stock.ticker}</small></td>
+                        <td>${stock.current_price.toLocaleString()}원</td>
+                        <td>${Math.round(stock.fair_price_per_share).toLocaleString()}원</td>
+                        <td class="${upsideClass}">${stock.upside_percent >= 0 ? '+' : ''}${stock.upside_percent.toFixed(1)}%</td>
+                        <td><span class="badge ${badgeClass}">${stock.judgment}</span></td>
+                        <td>
+                            <div>${Math.round(stock.score)}/100</div>
+                            <div class="score-bar">
+                                <div class="score-fill" style="width: ${stock.score}%"></div>
+                            </div>
+                        </td>
+                        <td>${stock.moat_count}개 (${stock.moat_strength})</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // 페이지 로드 시 데이터 로드
+        window.addEventListener('DOMContentLoaded', loadPortfolioData);
+    </script>
+</body>
+</html>

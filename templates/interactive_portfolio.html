@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>레츠고 주식왕 - 인터랙티브 포트폴리오</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .nav {
+            background: #f8f9fa;
+            padding: 15px 30px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .nav a {
+            text-decoration: none;
+            color: #333;
+            padding: 10px 20px;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+
+        .nav a:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .nav a.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        /* 종목 추가 폼 */
+        .stock-form {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .add-stock-area {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .help-text {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-top: 10px;
+        }
+
+        .help-text strong {
+            color: #333;
+        }
+
+        .preset-badge {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            margin-left: 5px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+            padding: 5px 10px;
+            font-size: 0.9rem;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 추가된 종목 리스트 */
+        .stock-list {
+            margin-top: 20px;
+        }
+
+        .stock-item {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .stock-item-info {
+            flex: 1;
+        }
+
+        .stock-item-ticker {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #333;
+        }
+
+        /* 로딩 스피너 */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 대시보드 */
+        .dashboard {
+            display: none;
+        }
+
+        .dashboard.active {
+            display: block;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .summary-card h3 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .summary-card p {
+            opacity: 0.9;
+        }
+
+        .charts {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .chart-container h3 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        /* 테이블 */
+        .table-container {
+            overflow-x: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .badge {
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        @media (max-width: 768px) {
+            .charts {
+                grid-template-columns: 1fr;
+            }
+
+            .add-stock-area {
+                flex-direction: column;
+            }
+
+            .form-group {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📈 레츠고 주식왕</h1>
+            <p>실시간 포트폴리오 분석 시스템 - AI 자동 분석</p>
+        </header>
+
+        <div class="nav">
+            <a href="/portfolio" class="active">실시간 포트폴리오</a>
+            <a href="/backtest">백테스트</a>
+        </div>
+
+        <div class="content">
+            <!-- 종목 추가 섹션 -->
+            <div class="section">
+                <h2 class="section-title">1. 종목 추가</h2>
+
+                <div class="stock-form">
+                    <div class="add-stock-area">
+                        <div class="form-group">
+                            <label for="ticker-input">종목 코드</label>
+                            <input type="text" id="ticker-input" placeholder="예: 005930, 000660, 035720">
+                        </div>
+                        <button class="btn btn-primary" onclick="addStock()">종목 추가</button>
+                    </div>
+
+                    <div class="help-text">
+                        <strong>💡 사용 방법:</strong> 종목 코드만 입력하면 AI가 자동으로 재무제표, PER, PBR, ROE, 경제적 해자, 경영진 평가 등을 분석합니다.
+                        <br>
+                        <strong>📋 주요 종목:</strong> 005930(삼성전자), 000660(SK하이닉스), 035720(카카오), 035420(NAVER), 005380(현대차), 000270(기아), 105560(KB금융), 055550(신한지주)
+                        <span class="preset-badge">자동 분석</span>
+                    </div>
+                </div>
+
+                <div class="stock-list" id="stock-list">
+                    <p style="color: #6c757d;">추가된 종목이 없습니다. 위 폼에서 종목 코드를 입력해주세요.</p>
+                </div>
+            </div>
+
+            <!-- 포트폴리오 구성 버튼 -->
+            <div class="section" style="text-align: center;">
+                <button class="btn btn-success" id="build-btn" onclick="buildPortfolio()" disabled>
+                    🚀 포트폴리오 구성하기 (AI 자동 분석)
+                </button>
+            </div>
+
+            <!-- 로딩 -->
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Yahoo Finance API에서 실시간 데이터를 가져와 AI가 분석하는 중입니다...</p>
+                <p style="color: #6c757d; margin-top: 10px;">재무제표, PER, PBR, ROE, S-RIM, 경제적 해자, 경영진 평가 등을 종합 분석합니다.</p>
+            </div>
+
+            <!-- 대시보드 -->
+            <div class="dashboard" id="dashboard">
+                <div class="section">
+                    <h2 class="section-title">2. 포트폴리오 분석 결과</h2>
+
+                    <!-- 요약 -->
+                    <div class="summary">
+                        <div class="summary-card">
+                            <h3 id="total-stocks">0</h3>
+                            <p>총 종목 수</p>
+                        </div>
+                        <div class="summary-card">
+                            <h3 id="undervalued">0</h3>
+                            <p>저평가 종목</p>
+                        </div>
+                        <div class="summary-card">
+                            <h3 id="fair-priced">0</h3>
+                            <p>적정가 종목</p>
+                        </div>
+                        <div class="summary-card">
+                            <h3 id="overvalued">0</h3>
+                            <p>고평가 종목</p>
+                        </div>
+                        <div class="summary-card">
+                            <h3 id="avg-upside">0%</h3>
+                            <p>평균 상승여력</p>
+                        </div>
+                    </div>
+
+                    <!-- 차트 -->
+                    <div class="charts">
+                        <div class="chart-container">
+                            <h3>평가 분포</h3>
+                            <canvas id="evaluation-chart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3>상승여력 TOP 5</h3>
+                            <canvas id="upside-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- 종목 테이블 -->
+                    <div class="table-container">
+                        <h3 style="margin-bottom: 20px;">전체 종목 분석</h3>
+                        <table id="stocks-table">
+                            <thead>
+                                <tr>
+                                    <th>순위</th>
+                                    <th>종목명</th>
+                                    <th>현재가</th>
+                                    <th>적정가</th>
+                                    <th>상승여력</th>
+                                    <th>평가</th>
+                                    <th>점수</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stocks-tbody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API 서버 주소
+        const API_URL = 'http://localhost:5000';
+
+        // 추가된 종목 저장
+        let stocks = [];
+
+        // 종목 추가
+        function addStock() {
+            const ticker = document.getElementById('ticker-input').value.trim();
+
+            if (!ticker) {
+                alert('종목 코드를 입력해주세요.');
+                return;
+            }
+
+            // 중복 체크
+            if (stocks.includes(ticker)) {
+                alert('이미 추가된 종목입니다.');
+                return;
+            }
+
+            // 종목 추가
+            stocks.push(ticker);
+
+            // UI 업데이트
+            renderStockList();
+
+            // 폼 초기화
+            document.getElementById('ticker-input').value = '';
+
+            // 포트폴리오 구성 버튼 활성화
+            document.getElementById('build-btn').disabled = false;
+        }
+
+        // 종목 리스트 렌더링
+        function renderStockList() {
+            const listEl = document.getElementById('stock-list');
+
+            if (stocks.length === 0) {
+                listEl.innerHTML = '<p style="color: #6c757d;">추가된 종목이 없습니다. 위 폼에서 종목 코드를 입력해주세요.</p>';
+                return;
+            }
+
+            listEl.innerHTML = stocks.map((ticker, index) => {
+                return `
+                    <div class="stock-item">
+                        <div class="stock-item-info">
+                            <div class="stock-item-ticker">${ticker}</div>
+                        </div>
+                        <button class="btn btn-danger" onclick="removeStock(${index})">삭제</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 종목 삭제
+        function removeStock(index) {
+            stocks.splice(index, 1);
+            renderStockList();
+
+            if (stocks.length === 0) {
+                document.getElementById('build-btn').disabled = true;
+            }
+        }
+
+        // 포트폴리오 구성
+        async function buildPortfolio() {
+            if (stocks.length === 0) {
+                alert('분석할 종목을 추가해주세요.');
+                return;
+            }
+
+            // 로딩 표시
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('dashboard').classList.remove('active');
+
+            try {
+                // API 호출 (stock_configs 없이)
+                const response = await fetch(`${API_URL}/api/portfolio`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        tickers: stocks,
+                        stock_configs: {}  // 빈 객체 - 자동 분석
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    throw new Error(result.error);
+                }
+
+                // 대시보드 렌더링
+                renderDashboard(result.data);
+
+            } catch (error) {
+                console.error('포트폴리오 생성 실패:', error);
+                alert(`포트폴리오 생성 실패: ${error.message}\n\nAPI 서버가 실행 중인지 확인해주세요.`);
+            } finally {
+                document.getElementById('loading').classList.remove('active');
+            }
+        }
+
+        // 대시보드 렌더링
+        function renderDashboard(data) {
+            const { stocks: stocksData, summary } = data;
+
+            // 요약 통계
+            document.getElementById('total-stocks').textContent = summary.total_stocks;
+            document.getElementById('undervalued').textContent = summary.undervalued;
+            document.getElementById('fair-priced').textContent = summary.fair_priced;
+            document.getElementById('overvalued').textContent = summary.overvalued;
+
+            const avgUpside = summary.avg_upside;
+            const avgUpsideEl = document.getElementById('avg-upside');
+            avgUpsideEl.textContent = `${avgUpside >= 0 ? '+' : ''}${avgUpside.toFixed(1)}%`;
+
+            // 평가 분포 차트
+            renderEvaluationChart(summary);
+
+            // 상승여력 차트
+            renderUpsideChart(stocksData);
+
+            // 종목 테이블
+            renderStocksTable(stocksData);
+
+            // 대시보드 표시
+            document.getElementById('dashboard').classList.add('active');
+        }
+
+        // 평가 분포 차트
+        function renderEvaluationChart(summary) {
+            const ctx = document.getElementById('evaluation-chart').getContext('2d');
+
+            // 기존 차트 삭제
+            if (window.evaluationChart) {
+                window.evaluationChart.destroy();
+            }
+
+            window.evaluationChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['저평가', '적정가', '고평가'],
+                    datasets: [{
+                        data: [summary.undervalued, summary.fair_priced, summary.overvalued],
+                        backgroundColor: ['#28a745', '#ffc107', '#dc3545']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true
+                }
+            });
+        }
+
+        // 상승여력 차트
+        function renderUpsideChart(stocksData) {
+            const ctx = document.getElementById('upside-chart').getContext('2d');
+
+            // 기존 차트 삭제
+            if (window.upsideChart) {
+                window.upsideChart.destroy();
+            }
+
+            // 상위 5개 종목
+            const top5 = stocksData.slice(0, 5);
+
+            window.upsideChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: top5.map(s => s.company_name),
+                    datasets: [{
+                        label: '상승여력 (%)',
+                        data: top5.map(s => s.upside_percent),
+                        backgroundColor: top5.map(s =>
+                            s.upside_percent > 20 ? '#28a745' :
+                            s.upside_percent < -20 ? '#dc3545' :
+                            '#ffc107'
+                        )
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // 종목 테이블
+        function renderStocksTable(stocksData) {
+            const tbody = document.getElementById('stocks-tbody');
+
+            tbody.innerHTML = stocksData.map((stock, index) => {
+                const judgmentClass =
+                    stock.judgment === '저평가' ? 'badge-success' :
+                    stock.judgment === '고평가' ? 'badge-danger' :
+                    'badge-warning';
+
+                return `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${stock.company_name}</td>
+                        <td>${stock.current_price.toLocaleString()}원</td>
+                        <td>${stock.fair_price_per_share.toLocaleString()}원</td>
+                        <td style="color: ${stock.upside_percent >= 0 ? '#28a745' : '#dc3545'}">
+                            ${stock.upside_percent >= 0 ? '+' : ''}${stock.upside_percent.toFixed(1)}%
+                        </td>
+                        <td><span class="badge ${judgmentClass}">${stock.judgment}</span></td>
+                        <td>${stock.score.toFixed(0)}/100</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // 엔터 키로 종목 추가
+        document.getElementById('ticker-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addStock();
+            }
+        });
+    </script>
+</body>
+</html>
